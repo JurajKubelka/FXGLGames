@@ -6,10 +6,7 @@
 META-INF/
 
 # Eclipse #
-.classpath
-.project
-.settings/
-/bin
+bin
 
 # IDEA #
 .idea/
