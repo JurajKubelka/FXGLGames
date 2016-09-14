@@ -36,7 +36,6 @@ import com.almasb.fxgl.input.ActionType;
 import com.almasb.fxgl.input.Input;
 import com.almasb.fxgl.input.InputMapping;
 import com.almasb.fxgl.input.OnUserAction;
-import com.almasb.fxgl.physics.BoundingShape;
 import com.almasb.fxgl.physics.CollisionHandler;
 import com.almasb.fxgl.physics.HitBox;
 import com.almasb.fxgl.settings.GameSettings;

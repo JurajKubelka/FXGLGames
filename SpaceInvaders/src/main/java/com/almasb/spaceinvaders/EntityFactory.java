@@ -28,8 +28,6 @@ package com.almasb.spaceinvaders;
 
 import com.almasb.ents.Entity;
 import com.almasb.fxgl.app.FXGL;
-import com.almasb.fxgl.app.GameApplication;
-import com.almasb.fxgl.app.ServiceType;
 import com.almasb.fxgl.asset.AssetLoader;
 import com.almasb.fxgl.physics.BoundingShape;
 import com.almasb.fxgl.texture.Texture;
@@ -46,7 +44,6 @@ import com.almasb.spaceinvaders.component.InvincibleComponent;
 import com.almasb.spaceinvaders.component.OwnerComponent;
 import com.almasb.spaceinvaders.component.SubTypeComponent;
 import com.almasb.spaceinvaders.control.*;
-import javafx.geometry.BoundingBox;
 import javafx.geometry.Point2D;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Glow;

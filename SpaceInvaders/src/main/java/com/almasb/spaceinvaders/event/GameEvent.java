@@ -35,6 +35,11 @@ import javafx.event.EventType;
  */
 public class GameEvent extends Event {
 
+    /**
+   * 
+   */
+  private static final long serialVersionUID = -4399815299034287818L;
+
     public static final EventType<GameEvent> ANY =
             new EventType<>(Event.ANY, "GAME_EVENT");
 

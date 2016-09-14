@@ -31,9 +31,7 @@ import com.almasb.fxgl.app.ApplicationMode;
 import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.entity.EntityView;
 import com.almasb.fxgl.entity.GameEntity;
-import com.almasb.fxgl.entity.component.MainViewComponent;
 import com.almasb.fxgl.entity.control.ExpireCleanControl;
-import com.almasb.fxgl.entity.control.ProjectileControl;
 import com.almasb.fxgl.gameplay.Achievement;
 import com.almasb.fxgl.gameplay.AchievementManager;
 import com.almasb.fxgl.input.*;
@@ -52,7 +50,6 @@ import com.almasb.spaceinvaders.tutorial.Tutorial;
 import com.almasb.spaceinvaders.tutorial.TutorialStep;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.geometry.Point2D;
 import javafx.scene.Parent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
@@ -63,7 +60,6 @@ import javafx.util.Duration;
 import org.jbox2d.dynamics.BodyType;
 import org.jbox2d.dynamics.FixtureDef;
 
-import java.io.Serializable;
 import java.util.stream.IntStream;
 
 import static com.almasb.spaceinvaders.Config.*;

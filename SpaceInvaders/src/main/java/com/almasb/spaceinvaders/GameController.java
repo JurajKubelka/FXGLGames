@@ -27,7 +27,6 @@
 package com.almasb.spaceinvaders;
 
 import com.almasb.fxgl.app.FXGL;
-import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.app.ServiceType;
 import com.almasb.fxgl.scene.GameScene;
 import com.almasb.fxgl.scene.Viewport;

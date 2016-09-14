@@ -36,7 +36,6 @@ import com.almasb.fxgl.physics.PhysicsComponent;
 import com.almasb.pong.control.BallControl;
 import com.almasb.pong.control.BatControl;
 import com.almasb.pong.control.EnemyBatControl;
-import javafx.geometry.BoundingBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;

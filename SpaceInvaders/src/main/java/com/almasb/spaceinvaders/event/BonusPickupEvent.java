@@ -36,6 +36,11 @@ import javafx.event.EventType;
  */
 public class BonusPickupEvent extends GameEvent {
 
+    /**
+   * 
+   */
+  private static final long serialVersionUID = 2191516654465067733L;
+
     public static final EventType<BonusPickupEvent> ANY =
             new EventType<>(GameEvent.ANY, "BONUS_EVENT");
 
