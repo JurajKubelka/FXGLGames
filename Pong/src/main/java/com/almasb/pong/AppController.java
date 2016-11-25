@@ -28,7 +28,6 @@ package com.almasb.pong;
 
 import com.almasb.fxgl.app.FXGL;
 import com.almasb.fxgl.ui.UIController;
-import com.almasb.fxgl.ui.UIFactory;
 import javafx.animation.FadeTransition;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;

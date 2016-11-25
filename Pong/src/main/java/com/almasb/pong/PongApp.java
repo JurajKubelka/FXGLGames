@@ -43,7 +43,6 @@ import com.almasb.fxgl.ui.UI;
 import com.almasb.pong.control.BatControl;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.scene.Parent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
