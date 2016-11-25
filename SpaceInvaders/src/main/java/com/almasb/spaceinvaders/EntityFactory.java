@@ -29,8 +29,6 @@ package com.almasb.spaceinvaders;
 import com.almasb.ents.Entity;
 import com.almasb.fxgl.app.FXGL;
 import com.almasb.fxgl.asset.AssetLoader;
-import com.almasb.fxgl.physics.BoundingShape;
-import com.almasb.fxgl.texture.Texture;
 import com.almasb.fxgl.entity.Entities;
 import com.almasb.fxgl.entity.EntityView;
 import com.almasb.fxgl.entity.GameEntity;
@@ -38,17 +36,19 @@ import com.almasb.fxgl.entity.component.CollidableComponent;
 import com.almasb.fxgl.entity.control.ExpireCleanControl;
 import com.almasb.fxgl.entity.control.OffscreenCleanControl;
 import com.almasb.fxgl.entity.control.ProjectileControl;
+import com.almasb.fxgl.physics.BoundingShape;
 import com.almasb.fxgl.physics.HitBox;
+import com.almasb.fxgl.texture.Texture;
 import com.almasb.spaceinvaders.component.HPComponent;
 import com.almasb.spaceinvaders.component.InvincibleComponent;
 import com.almasb.spaceinvaders.component.OwnerComponent;
 import com.almasb.spaceinvaders.component.SubTypeComponent;
 import com.almasb.spaceinvaders.control.*;
 import javafx.geometry.Point2D;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Glow;
 import javafx.scene.paint.Color;
-import javafx.scene.transform.Scale;
 import javafx.util.Duration;
 
 import java.util.Random;
@@ -93,12 +93,10 @@ public final class EntityFactory {
     private static final Random random = new Random();
 
     public static Entity newBackground(double w, double h) {
-        GameEntity bg = new GameEntity();
-        Texture bgTexture = assetLoader.loadTexture("background/background.png");
-        bgTexture.setFitWidth(w);
-        bgTexture.setFitHeight(h);
+        GameEntity bg = Entities.builder()
+                .viewFromNode(assetLoader.loadTexture("background/background.png", w, h))
+                .build();
 
-        bg.getMainViewComponent().setView(bgTexture);
         bg.getMainViewComponent().setRenderLayer(RenderLayer.BACKGROUND);
 
         return bg;
@@ -173,7 +171,7 @@ public final class EntityFactory {
                 .at(x, y)
                 .viewFromNodeWithBBox(assetLoader
                         .loadTexture("enemy" + ((int)(Math.random() * 3) + 1) + ".png")
-                        .toStaticAnimatedTexture(2, Duration.seconds(2)))
+                        .toAnimatedTexture(2, Duration.seconds(2)))
                 .with(new CollidableComponent(true), new HPComponent(2))
                 .with(new EnemyControl())
                 .build();
@@ -251,32 +249,25 @@ public final class EntityFactory {
     }
 
     public static Entity newExplosion(Point2D position) {
-        GameEntity explosion = new GameEntity();
-        explosion.getPositionComponent().setValue(position.subtract(40, 40));
+        GameEntity explosion = Entities.builder()
+                .at(position.subtract(40, 40))
+                // texture is 256x256, we want smaller, 80x80
+                // it has 48 frames, hence 80 * 48
+                .viewFromNode(assetLoader.loadTexture("explosion.png", 80 * 48, 80).toAnimatedTexture(48, Duration.seconds(2)))
+                .with(new ExpireCleanControl(Duration.seconds(1.8)))
+                .build();
 
-        Texture animation = assetLoader.loadTexture("explosion.png").toStaticAnimatedTexture(48, Duration.seconds(2));
-        //animation.setFitWidth(80);
-        //animation.setFitHeight(80);
-
-        animation.getTransforms().add(new Scale(0.5, 0.5, 0, 0));
-
-        explosion.getMainViewComponent().setView(animation);
-        explosion.addControl(new ExpireCleanControl(Duration.seconds(1.8)));
+        // slightly better looking effect
+        explosion.getView().setBlendMode(BlendMode.ADD);
 
         return explosion;
     }
 
     public static Entity newLaserHit(Point2D position) {
-        GameEntity laserHit = new GameEntity();
-        laserHit.getPositionComponent().setValue(position.subtract(15, 15));
-
-        Texture hit = assetLoader.loadTexture("laser_hit.png");
-        hit.setFitWidth(15);
-        hit.setFitHeight(15);
-
-        laserHit.getMainViewComponent().setView(hit);
-        laserHit.addControl(new LaserHitControl());
-
-        return laserHit;
+        return Entities.builder()
+                .at(position.subtract(15, 15))
+                .viewFromNode(assetLoader.loadTexture("laser_hit.png", 15, 15))
+                .with(new LaserHitControl())
+                .build();
     }
 }

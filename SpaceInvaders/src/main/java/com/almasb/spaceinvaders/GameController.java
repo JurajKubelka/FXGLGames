@@ -32,7 +32,6 @@ import com.almasb.fxgl.scene.GameScene;
 import com.almasb.fxgl.scene.Viewport;
 import com.almasb.fxgl.texture.Texture;
 import com.almasb.fxgl.ui.UIController;
-import com.almasb.fxgl.ui.UIFactory;
 import javafx.animation.Animation;
 import javafx.animation.ScaleTransition;
 import javafx.animation.SequentialTransition;
@@ -74,8 +73,8 @@ public class GameController implements UIController {
 
     @Override
     public void init() {
-        labelScore.setFont(UIFactory.newFont(18));
-        labelHighScore.setFont(UIFactory.newFont(18));
+        labelScore.setFont(FXGL.getUIFactory().newFont(18));
+        labelHighScore.setFont(FXGL.getUIFactory().newFont(18));
     }
 
     public Label getLabelScore() {
@@ -89,11 +88,9 @@ public class GameController implements UIController {
     public void addLife() {
         int numLives = lives.size();
 
-        Texture texture = FXGL.getService(ServiceType.ASSET_LOADER).loadTexture("life.png");
+        Texture texture = FXGL.getService(ServiceType.ASSET_LOADER).loadTexture("life.png", 16, 16);
         texture.setTranslateX(livesX + 32 * numLives);
         texture.setTranslateY(livesY);
-        texture.setFitWidth(16);
-        texture.setFitHeight(16);
 
         lives.add(texture);
         gameScene.addUINode(texture);

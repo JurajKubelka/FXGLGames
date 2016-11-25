@@ -1,8 +1,11 @@
 package com.almasb.tictactoe;
 
+import com.almasb.ents.Entity;
 import com.almasb.fxgl.app.ApplicationMode;
 import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.settings.GameSettings;
+import com.almasb.tictactoe.control.enemy.MinimaxControl;
+import com.almasb.tictactoe.event.AIEvent;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -15,6 +18,8 @@ import java.util.List;
 
 /**
  * An example of a UI based game.
+ * A classic game of Tic-tac-toe.
+ * Comes with 2 types of AI: rule based and minimax based.
  *
  * @author Almas Baimagambetov (almaslvl@gmail.com)
  */
@@ -23,13 +28,13 @@ public class TicTacToeApp extends GameApplication {
     @Override
     protected void initSettings(GameSettings settings) {
         settings.setTitle("TicTacToe");
-        settings.setVersion("0.1");
+        settings.setVersion("0.3");
         settings.setWidth(600);
         settings.setHeight(600);
         settings.setIntroEnabled(false);
         settings.setMenuEnabled(false);
-        settings.setShowFPS(false);
         settings.setProfilingEnabled(false);
+        settings.setCloseConfirmation(false);
         settings.setApplicationMode(ApplicationMode.DEVELOPER);
     }
 
@@ -40,33 +45,39 @@ public class TicTacToeApp extends GameApplication {
     protected void initAssets() {}
 
     @Override
-    protected void initGame() {}
+    protected void preInit() {
+        getEventBus().addEventHandler(AIEvent.MOVED, event -> checkGameFinished());
+    }
 
-    @Override
-    protected void initPhysics() {}
-
-    private Tile[][] board = new Tile[3][3];
+    private TileEntity[][] board = new TileEntity[3][3];
     private List<TileCombo> combos = new ArrayList<>();
 
-    @Override
-    protected void initUI() {
-        Line line1 = new Line(getWidth() / 3, 0, getWidth() / 3, 0);
-        Line line2 = new Line(getWidth() / 3 * 2, 0, getWidth() / 3 * 2, 0);
-        Line line3 = new Line(0, getHeight() / 3, 0, getHeight() / 3);
-        Line line4 = new Line(0, getHeight() / 3 * 2, 0, getHeight() / 3 * 2);
+    private boolean playerStarts = true;
 
+    public TileEntity[][] getBoard() {
+        return board;
+    }
+
+    public List<TileCombo> getCombos() {
+        return combos;
+    }
+
+    @Override
+    protected void initGame() {
         for (int y = 0; y < 3; y++) {
             for (int x = 0; x < 3; x++) {
-                Tile tile = new Tile();
-                tile.setTranslateX(x * getWidth() / 3);
-                tile.setTranslateY(y * getHeight() / 3);
-
+                TileEntity tile = new TileEntity(x * getWidth() / 3, y * getHeight() / 3);
                 board[x][y] = tile;
-                getGameScene().addUINode(tile);
+
+                getGameWorld().addEntity(tile);
             }
         }
 
-        getGameScene().addUINodes(line1, line2, line3, line4);
+        Entity enemy = new Entity();
+
+        // this controls the AI behavior
+        enemy.addControl(new MinimaxControl());
+        getGameWorld().addEntity(enemy);
 
         combos.clear();
 
@@ -83,6 +94,26 @@ public class TicTacToeApp extends GameApplication {
         // diagonals
         combos.add(new TileCombo(board[0][0], board[1][1], board[2][2]));
         combos.add(new TileCombo(board[2][0], board[1][1], board[0][2]));
+
+        if (playerStarts) {
+            playerStarts = false;
+        } else {
+            aiMove();
+            playerStarts = true;
+        }
+    }
+
+    @Override
+    protected void initPhysics() {}
+
+    @Override
+    protected void initUI() {
+        Line line1 = new Line(getWidth() / 3, 0, getWidth() / 3, 0);
+        Line line2 = new Line(getWidth() / 3 * 2, 0, getWidth() / 3 * 2, 0);
+        Line line3 = new Line(0, getHeight() / 3, 0, getHeight() / 3);
+        Line line4 = new Line(0, getHeight() / 3 * 2, 0, getHeight() / 3 * 2);
+
+        getGameScene().addUINodes(line1, line2, line3, line4);
 
         // animation
         KeyFrame frame1 = new KeyFrame(Duration.seconds(0.5),
@@ -114,9 +145,9 @@ public class TicTacToeApp extends GameApplication {
 
         for (int y = 0; y < 3; y++) {
             for (int x = 0; x < 3; x++) {
-                Tile tile = board[x][y];
+                TileEntity tile = board[x][y];
                 if (tile.getValue() == TileValue.NONE) {
-                    // at least tile is empty
+                    // at least 1 tile is empty
                     return false;
                 }
             }
@@ -128,10 +159,10 @@ public class TicTacToeApp extends GameApplication {
 
     private void playWinAnimation(TileCombo combo) {
         Line line = new Line();
-        line.setStartX(combo.getTile1().getCenterX());
-        line.setStartY(combo.getTile1().getCenterY());
-        line.setEndX(combo.getTile1().getCenterX());
-        line.setEndY(combo.getTile1().getCenterY());
+        line.setStartX(combo.getTile1().getCenter().getX());
+        line.setStartY(combo.getTile1().getCenter().getY());
+        line.setEndX(combo.getTile1().getCenter().getX());
+        line.setEndY(combo.getTile1().getCenter().getY());
         line.setStroke(Color.YELLOW);
         line.setStrokeWidth(3);
 
@@ -139,8 +170,8 @@ public class TicTacToeApp extends GameApplication {
 
         Timeline timeline = new Timeline();
         timeline.getKeyFrames().add(new KeyFrame(Duration.seconds(1),
-                new KeyValue(line.endXProperty(), combo.getTile3().getCenterX()),
-                new KeyValue(line.endYProperty(), combo.getTile3().getCenterY())));
+                new KeyValue(line.endXProperty(), combo.getTile3().getCenter().getX()),
+                new KeyValue(line.endYProperty(), combo.getTile3().getCenter().getY())));
         timeline.setOnFinished(e -> gameOver(combo.getWinSymbol()));
         timeline.play();
     }
@@ -154,37 +185,20 @@ public class TicTacToeApp extends GameApplication {
         });
     }
 
-    public void onUserMove(Tile tile) {
-        boolean ok = tile.mark(TileValue.X);
+    public void onUserMove(TileEntity tile) {
+        boolean ok = tile.getControl().mark(TileValue.X);
 
         if (ok) {
             boolean over = checkGameFinished();
 
             if (!over) {
                 aiMove();
-                checkGameFinished();
             }
         }
     }
 
-    /**
-     * This AI move simply select first empty tile.
-     * Smarter AI could do something like this in order:
-     *
-     * 1. Check if there is a player's half-combo and prevent that
-     * 2. Check if there is a CPU's half-combo and complete it
-     * 3. Check if there is a 3-tile empty combo.
-     */
     private void aiMove() {
-        for (int y = 0; y < 3; y++) {
-            for (int x = 0; x < 3; x++) {
-                Tile tile = board[x][y];
-                if (tile.getValue() == TileValue.NONE) {
-                    tile.mark(TileValue.O);
-                    return;
-                }
-            }
-        }
+        getEventBus().fireEvent(new AIEvent(AIEvent.WAITING));
     }
 
     public static void main(String[] args) {

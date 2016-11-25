@@ -6,7 +6,10 @@
 META-INF/
 
 # Eclipse #
-bin
+.classpath
+.project
+.settings/
+/bin
 
 # IDEA #
 .idea/
@@ -25,3 +28,6 @@ logs/
 /saves
 profiles/
 system/
+
+# Space Invaders #
+hiscore.dat

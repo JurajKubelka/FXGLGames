@@ -39,6 +39,7 @@ import com.almasb.fxgl.input.OnUserAction;
 import com.almasb.fxgl.physics.CollisionHandler;
 import com.almasb.fxgl.physics.HitBox;
 import com.almasb.fxgl.settings.GameSettings;
+import com.almasb.fxgl.ui.UI;
 import com.almasb.pong.control.BatControl;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -104,12 +105,12 @@ public class PongApp extends GameApplication {
     @Override
     protected void initUI() {
         AppController controller = new AppController();
-        Parent ui = getAssetLoader().loadFXML("main.fxml", controller);
+        UI ui = getAssetLoader().loadUI("main.fxml", controller);
 
         controller.getLabelScorePlayer().textProperty().bind(scorePlayer.asString());
         controller.getLabelScoreEnemy().textProperty().bind(scoreEnemy.asString());
 
-        getGameScene().addUINode(ui);
+        getGameScene().addUI(ui);
     }
 
     @Override

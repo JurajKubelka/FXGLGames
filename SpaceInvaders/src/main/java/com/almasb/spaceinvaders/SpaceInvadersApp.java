@@ -26,19 +26,25 @@
 
 package com.almasb.spaceinvaders;
 
+import com.almasb.easyio.FS;
 import com.almasb.ents.Entity;
 import com.almasb.fxgl.app.ApplicationMode;
 import com.almasb.fxgl.app.GameApplication;
+import com.almasb.fxgl.entity.Entities;
 import com.almasb.fxgl.entity.EntityView;
 import com.almasb.fxgl.entity.GameEntity;
+import com.almasb.fxgl.entity.animation.AnimationBuilder;
 import com.almasb.fxgl.entity.control.ExpireCleanControl;
 import com.almasb.fxgl.gameplay.Achievement;
 import com.almasb.fxgl.gameplay.AchievementManager;
-import com.almasb.fxgl.input.*;
+import com.almasb.fxgl.input.ActionType;
+import com.almasb.fxgl.input.Input;
+import com.almasb.fxgl.input.InputMapping;
+import com.almasb.fxgl.input.OnUserAction;
 import com.almasb.fxgl.physics.PhysicsComponent;
 import com.almasb.fxgl.physics.PhysicsWorld;
 import com.almasb.fxgl.settings.GameSettings;
-import com.almasb.fxgl.ui.UIFactory;
+import com.almasb.fxgl.ui.UI;
 import com.almasb.spaceinvaders.collision.BonusPlayerHandler;
 import com.almasb.spaceinvaders.collision.BulletEnemyHandler;
 import com.almasb.spaceinvaders.collision.BulletPlayerHandler;
@@ -50,10 +56,10 @@ import com.almasb.spaceinvaders.tutorial.Tutorial;
 import com.almasb.spaceinvaders.tutorial.TutorialStep;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.scene.Parent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.CubicCurve;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
@@ -74,12 +80,12 @@ public class SpaceInvadersApp extends GameApplication {
     @Override
     protected void initSettings(GameSettings settings) {
         settings.setTitle("Space Invaders");
-        settings.setVersion("0.6");
+        settings.setVersion("0.7");
         settings.setWidth(WIDTH);
         settings.setHeight(HEIGHT);
         settings.setIntroEnabled(false);
         settings.setMenuEnabled(false);
-        settings.setShowFPS(true);
+        settings.setProfilingEnabled(false);
         settings.setApplicationMode(ApplicationMode.DEVELOPER);
     }
 
@@ -98,8 +104,6 @@ public class SpaceInvadersApp extends GameApplication {
         input.addInputMapping(new InputMapping("Move Left", KeyCode.A));
         input.addInputMapping(new InputMapping("Move Right", KeyCode.D));
         input.addInputMapping(new InputMapping("Shoot", MouseButton.PRIMARY));
-
-
     }
 
     @OnUserAction(name = "Move Left", type = ActionType.ON_ACTION)
@@ -118,9 +122,7 @@ public class SpaceInvadersApp extends GameApplication {
     }
 
     @Override
-    protected void initAssets() {
-        getAssetLoader().cache();
-    }
+    protected void initAssets() {}
 
     private GameEntity player;
     private PlayerControl playerControl;
@@ -140,30 +142,29 @@ public class SpaceInvadersApp extends GameApplication {
         getAudioPlayer().setGlobalSoundVolume(0.2);
         getAudioPlayer().setGlobalMusicVolume(0.2);
 
-        getNotificationService().setBackgroundColor(Color.DARKBLUE);
-
         getEventBus().addEventHandler(GameEvent.PLAYER_GOT_HIT, this::onPlayerGotHit);
         getEventBus().addEventHandler(GameEvent.ENEMY_KILLED, this::onEnemyKilled);
+        getEventBus().addEventHandler(GameEvent.ENEMY_REACHED_END, this::onEnemyReachedEnd);
         getEventBus().addEventHandler(BonusPickupEvent.ANY, this::onBonusPickup);
     }
 
-//    @Override
-//    public void loadState(Serializable data) {
-//        SaveData saveData = (SaveData) data;
-//
-//        initGame(saveData);
-//    }
+    private SaveData savedData = null;
 
     @Override
     protected void initGame() {
-        initGame(highScore == 0
+
+        // we have to use file system directly, since we are running without menus
+        FS.<SaveData>readDataTask(SAVE_DATA_NAME)
+                .onSuccess(data -> savedData = data)
+                .onFailure(ignore -> {})
+                .execute();
+
+        initGame(savedData == null
                 ? new SaveData("CPU", ACHIEVEMENT_MASTER_SCORER)
-                : new SaveData(highScoreName, highScore));
+                : savedData);
     }
 
     private void initGame(SaveData data) {
-        //MainViewComponent.turnOnDebugBBox(Color.YELLOW);
-
         highScoreName = data.getName();
         highScore = data.getHighScore();
 
@@ -196,8 +197,18 @@ public class SpaceInvadersApp extends GameApplication {
         }, Duration.seconds(3));
     }
 
-    private void spawnEnemy(double x, double y) {
-        Entity enemy = EntityFactory.newEnemy(x, y);
+    private void spawnEnemy() {
+        Entity enemy = EntityFactory.newEnemy(0, 0);
+
+        CubicCurve curve = new CubicCurve(0, 0,
+                getWidth() * 2, getHeight() / 3, -getWidth(), 2 * getHeight() / 3,
+                getWidth(), getHeight());
+
+        Entities.animationBuilder()
+                .duration(Duration.seconds(15))
+                .translate((GameEntity) enemy)
+                .alongPath(curve)
+                .buildAndPlay();
 
         getGameWorld().addEntity(enemy);
     }
@@ -220,9 +231,13 @@ public class SpaceInvadersApp extends GameApplication {
     }
 
     private void initLevel() {
+        int count = 0;
         for (int y = 0; y < 5; y++) {
             for (int x = 0; x < 8; x++) {
-                spawnEnemy(x * (40 + 20), 100 + y * (40 + 20));
+                final int d = count;
+                count++;
+
+                getMasterTimer().runOnceAfter(this::spawnEnemy, Duration.seconds(d * 3));
             }
         }
 
@@ -250,9 +265,11 @@ public class SpaceInvadersApp extends GameApplication {
 
         level.set(level.get() + 1);
 
+        Text levelText = getUIFactory().newText("Level " + level.get(), Color.AQUAMARINE, 44);
+
         GameEntity levelInfo = new GameEntity();
-        levelInfo.getPositionComponent().setValue(getWidth() / 2 - UIFactory.widthOf("Level " + level.get(), 44) / 2, 0);
-        levelInfo.getMainViewComponent().setView(new EntityView(UIFactory.newText("Level " + level.get(), Color.AQUAMARINE, 44)), true);
+        levelInfo.getPositionComponent().setValue(getWidth() / 2 - levelText.getLayoutBounds().getWidth() / 2, 0);
+        levelInfo.getMainViewComponent().setView(new EntityView(levelText), true);
         levelInfo.addControl(new ExpireCleanControl(Duration.seconds(LEVEL_START_DELAY)));
 
         PhysicsComponent pComponent = new PhysicsComponent();
@@ -292,7 +309,7 @@ public class SpaceInvadersApp extends GameApplication {
     protected void initUI() {
         uiController = new GameController(getGameScene());
 
-        Parent ui = getAssetLoader().loadFXML(Asset.FXML_MAIN_UI, uiController);
+        UI ui = getAssetLoader().loadUI(Asset.FXML_MAIN_UI, uiController);
 
         uiController.getLabelScore().textProperty().bind(score.asString("Score: %d"));
         uiController.getLabelHighScore().setText("HiScore: " + highScore + " " + highScoreName + "");
@@ -300,7 +317,7 @@ public class SpaceInvadersApp extends GameApplication {
         IntStream.range(0, lives.get())
                 .forEach(i -> uiController.addLife());
 
-        getGameScene().addUINode(ui);
+        getGameScene().addUI(ui);
     }
 
     private boolean runningFirstTime = true;
@@ -340,9 +357,9 @@ public class SpaceInvadersApp extends GameApplication {
             getInput().mockButtonRelease(MouseButton.PRIMARY);
         });
 
-        Text tutorialText = UIFactory.newText("", Color.AQUA, 24);
+        Text tutorialText = getUIFactory().newText("", Color.AQUA, 24);
         tutorialText.textProperty().addListener((o, old, newText) -> {
-            tutorialText.setTranslateX(getWidth() / 2 - UIFactory.widthOf(newText, 24) / 2);
+            tutorialText.setTranslateX(getWidth() / 2 - tutorialText.getLayoutBounds().getWidth() / 2);
         });
 
         tutorialText.setTranslateY(getHeight() / 2 - 50);
@@ -391,6 +408,19 @@ public class SpaceInvadersApp extends GameApplication {
         }
     }
 
+    private void onEnemyReachedEnd(GameEvent event) {
+        enemiesDestroyed.set(enemiesDestroyed.get() + 1);
+
+        lives.set(lives.get() - 1);
+        uiController.loseLife();
+
+        if (lives.get() == 0)
+            showGameOver();
+
+        if (enemiesDestroyed.get() % 40 == 0)
+            nextLevel();
+    }
+
     private void onBonusPickup(BonusPickupEvent event) {
         switch (event.getType()) {
             case ATTACK_RATE:
@@ -410,7 +440,10 @@ public class SpaceInvadersApp extends GameApplication {
             } else {
                 if (score.get() > highScore) {
                     getDisplay().showInputBox("Enter your name", playerName -> {
-                        //getSaveLoadManager().save(new SaveData(playerName, score.get()), SAVE_DATA_NAME);
+
+                        // we have to use file system directly, since we are running without menus
+                        FS.writeDataTask(new SaveData(playerName, score.get()), SAVE_DATA_NAME).execute();
+
                         exit();
                     });
                 } else {
